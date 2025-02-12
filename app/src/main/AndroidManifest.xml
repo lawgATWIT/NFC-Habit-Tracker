@@ -3,11 +3,10 @@
     package="com.example.nfc_habit_tracker">
 
     <uses-permission android:name="android.permission.NFC"/>
-    <uses-feature android:name="android.hardware.nfc" android:required="true"/>
+    <uses-feature android:name="android.hardware.nfc" android:required="false"/>
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
-        android:allowBackup="true"
         android:theme="@style/Theme.Test1"
         android:label="NFC Habit Tracker"
         android:icon="@mipmap/ic_launcher"

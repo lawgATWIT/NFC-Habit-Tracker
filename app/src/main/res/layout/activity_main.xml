@@ -8,7 +8,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Scan NFC tags and see the details below:" />
+        android:text="@string/scan_nfc_tags_and_see_the_details_below" />
 
     <TableLayout
         android:id="@+id/nfcTable"

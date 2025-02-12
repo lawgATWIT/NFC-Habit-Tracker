@@ -140,7 +140,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void sendNotification(String tagContents) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (notificationManager == null) return;
+        if (notificationManager == null) {
+            return;
+        }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_notify_more)
