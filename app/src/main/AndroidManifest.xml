@@ -6,6 +6,7 @@
     <uses-feature android:name="android.hardware.nfc" android:required="false"/>
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:theme="@style/Theme.Test1"
         android:label="NFC Habit Tracker"
@@ -26,5 +27,4 @@
             </intent-filter>
         </activity>
     </application>
-
 </manifest>
