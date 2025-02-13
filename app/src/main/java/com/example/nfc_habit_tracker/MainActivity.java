@@ -33,10 +33,8 @@ public class MainActivity extends AppCompatActivity {
     private NfcAdapter nfcAdapter;
     private PendingIntent pendingIntent;
     private IntentFilter[] intentFiltersArray;
-
     private int scanCount = 0;
     private TableLayout nfcTable;
-
     private static final String CHANNEL_ID = "NFC_NOTIFICATION_CHANNEL";
 
     @Override
@@ -91,13 +89,13 @@ public class MainActivity extends AppCompatActivity {
 
                 String tagContents = readTagData(tag);
                 sendNotification(tagContents);
-
                 addScanToTable(scanCount, tagContents);
 
-                int red = (int) (Math.random() * 256);
-                int green = (int) (Math.random() * 256);
-                int blue = (int) (Math.random() * 256);
-                int randomColor = Color.rgb(red, green, blue);
+                int randomColor = Color.rgb(
+                        (int) (Math.random() * 256),
+                        (int) (Math.random() * 256),
+                        (int) (Math.random() * 256)
+                );
 
                 getWindow().getDecorView().setBackgroundColor(randomColor);
                 Toast.makeText(this, "NFC tag detected!", Toast.LENGTH_SHORT).show();
@@ -107,7 +105,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void addScanToTable(int scanNumber, String tagContents) {
         String currentTime = java.text.DateFormat.getDateTimeInstance().format(new Date());
-
         TableRow newRow = new TableRow(this);
 
         TextView scanNumberText = new TextView(this);
@@ -140,9 +137,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void sendNotification(String tagContents) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (notificationManager == null) {
-            return;
-        }
+        if (notificationManager == null) return;
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_notify_more)
@@ -152,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
 
         notificationManager.notify(scanCount, builder.build());
     }
-//Test!
+
     private String readTagData(Tag tag) {
         Ndef ndef = Ndef.get(tag);
         if (ndef != null) {
@@ -166,8 +161,7 @@ public class MainActivity extends AppCompatActivity {
                                 Arrays.equals(record.getType(), NdefRecord.RTD_TEXT)) {
                             byte[] payload = record.getPayload();
                             if (payload.length > 3) {
-                                Charset textCharset = StandardCharsets.UTF_8;
-                                return new String(payload, 3, payload.length - 3, textCharset);
+                                return new String(payload, 3, payload.length - 3, StandardCharsets.UTF_8);
                             }
                         }
                     }
@@ -177,6 +171,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("NFC_ERROR", "Error reading NFC tag", e);
             }
         }
-        return "Sorry, the tag that you scanned has no contents";
+        return "Tag has no content.";
     }
 }
