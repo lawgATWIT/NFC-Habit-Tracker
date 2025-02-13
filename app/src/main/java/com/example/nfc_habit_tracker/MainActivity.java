@@ -152,7 +152,7 @@ public class MainActivity extends AppCompatActivity {
 
         notificationManager.notify(scanCount, builder.build());
     }
-//comment!
+
     private String readTagData(Tag tag) {
         Ndef ndef = Ndef.get(tag);
         if (ndef != null) {
