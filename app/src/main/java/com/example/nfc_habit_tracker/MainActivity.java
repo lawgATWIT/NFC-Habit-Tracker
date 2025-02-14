@@ -142,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_notify_more)
                 .setContentTitle("NFC Scan Detected")
-                .setContentText("NFC Scans: " + scanCount + "\nTag Contents: " + tagContents)
+                .setContentText("NFC Scans:  " + scanCount + " " + "\nTag Contents:  " + " " + tagContents)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
         notificationManager.notify(scanCount, builder.build());

@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">NFC-Habit-Tracker</string>
+    <string name="app_name">Habitag</string>
     <string name="scan_nfc_tags_and_see_the_details_below">Scan NFC tags and see the details below:</string>
 </resources>
