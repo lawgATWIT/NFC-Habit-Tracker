@@ -33,8 +33,11 @@ public class MainActivity extends AppCompatActivity {
     private NfcAdapter nfcAdapter;
     private PendingIntent pendingIntent;
     private IntentFilter[] intentFiltersArray;
+    private boolean isNfcSupported = true;
+
     private int scanCount = 0;
     private TableLayout nfcTable;
+
     private static final String CHANNEL_ID = "NFC_NOTIFICATION_CHANNEL";
 
     @Override
@@ -44,13 +47,14 @@ public class MainActivity extends AppCompatActivity {
 
         createNotificationChannel();
 
+        nfcTable = findViewById(R.id.nfcTable);
+
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
         if (nfcAdapter == null) {
-            Toast.makeText(this, "NFC is not available on this device.", Toast.LENGTH_SHORT).show();
-            finish();
+            isNfcSupported = false;
+            Toast.makeText(this, "⚠️ NFC is not available on this device. Features will be limited.", Toast.LENGTH_LONG).show();
+            return;
         }
-
-        nfcTable = findViewById(R.id.nfcTable);
 
         pendingIntent = PendingIntent.getActivity(
                 this,
@@ -66,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (nfcAdapter != null) {
+        if (isNfcSupported && nfcAdapter != null) {
             nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, null);
         }
     }
@@ -74,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (nfcAdapter != null) {
+        if (isNfcSupported && nfcAdapter != null) {
             nfcAdapter.disableForegroundDispatch(this);
         }
     }
@@ -82,6 +86,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onNewIntent(@NonNull Intent intent) {
         super.onNewIntent(intent);
+        if (!isNfcSupported) {
+            return;
+        }
+
         if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(intent.getAction())) {
             Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
             if (tag != null) {
@@ -89,13 +97,13 @@ public class MainActivity extends AppCompatActivity {
 
                 String tagContents = readTagData(tag);
                 sendNotification(tagContents);
+
                 addScanToTable(scanCount, tagContents);
 
-                int randomColor = Color.rgb(
-                        (int) (Math.random() * 256),
-                        (int) (Math.random() * 256),
-                        (int) (Math.random() * 256)
-                );
+                int red = (int) (Math.random() * 256);
+                int green = (int) (Math.random() * 256);
+                int blue = (int) (Math.random() * 256);
+                int randomColor = Color.rgb(red, green, blue);
 
                 getWindow().getDecorView().setBackgroundColor(randomColor);
                 Toast.makeText(this, "NFC tag detected!", Toast.LENGTH_SHORT).show();
@@ -105,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void addScanToTable(int scanNumber, String tagContents) {
         String currentTime = java.text.DateFormat.getDateTimeInstance().format(new Date());
+
         TableRow newRow = new TableRow(this);
 
         TextView scanNumberText = new TextView(this);
@@ -137,7 +146,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void sendNotification(String tagContents) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (notificationManager == null) return;
+        if (notificationManager == null) {
+            return;
+        }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_notify_more)
@@ -161,7 +172,8 @@ public class MainActivity extends AppCompatActivity {
                                 Arrays.equals(record.getType(), NdefRecord.RTD_TEXT)) {
                             byte[] payload = record.getPayload();
                             if (payload.length > 3) {
-                                return new String(payload, 3, payload.length - 3, StandardCharsets.UTF_8);
+                                Charset textCharset = StandardCharsets.UTF_8;
+                                return new String(payload, 3, payload.length - 3, textCharset);
                             }
                         }
                     }
@@ -171,6 +183,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("NFC_ERROR", "Error reading NFC tag", e);
             }
         }
-        return "Tag has no content.";
+        return "Sorry, the tag that you scanned has no contents";
     }
 }
