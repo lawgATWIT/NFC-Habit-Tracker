@@ -1,24 +1,28 @@
 package com.example.nfc_habit_tracker;
 
-import androidx.room.ColumnInfo;
-import androidx.room.Entity;
-import androidx.room.PrimaryKey;
+import java.util.ArrayList;
 
-@Entity(tableName = "habits")
 public class Habit {
 
-    @PrimaryKey(autoGenerate = true)
-    public long id;
+    private String name;
+    private ArrayList<String> days;
+    private String time;
 
-    @ColumnInfo(name = "habit_name")
-    public String name;
+    public Habit(String name, ArrayList<String> days, String time) {
+        this.name = name;
+        this.days = days;
+        this.time = time;
+    }
 
-    @ColumnInfo(name = "days_of_week")
-    public String days; // Store days as comma-separated values (e.g., "Mon,Wed,Fri")
+    public String getName() {
+        return name;
+    }
 
-    @ColumnInfo(name = "frequency")
-    public int frequency; // Frequency per day (1-3)
+    public ArrayList<String> getDays() {
+        return days;
+    }
 
-    @ColumnInfo(name = "times")
-    public String times; // Store times as comma-separated values (e.g., "08:00,13:00,19:00")
+    public String getTime() {
+        return time;
+    }
 }

@@ -2,23 +2,23 @@ package com.example.nfc_habit_tracker;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.LinearLayout;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.ArrayList;
+
 public class HabitCreationActivity extends AppCompatActivity {
 
     private EditText habitNameEditText;
+    private CheckBox mondayCheckBox, tuesdayCheckBox, wednesdayCheckBox, thursdayCheckBox, fridayCheckBox, saturdayCheckBox, sundayCheckBox;
+    private TimePicker timePicker;
     private Button saveHabitButton;
-    private LinearLayout daysLayout;
-    private LinearLayout timeInputLayout;
-    private String[] daysOfWeek = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
-    private boolean[] selectedDays = new boolean[7];
-    private String selectedTime = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,68 +26,50 @@ public class HabitCreationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_habit_creation);
 
         habitNameEditText = findViewById(R.id.habitNameEditText);
+        mondayCheckBox = findViewById(R.id.mondayCheckBox);
+        tuesdayCheckBox = findViewById(R.id.tuesdayCheckBox);
+        wednesdayCheckBox = findViewById(R.id.wednesdayCheckBox);
+        thursdayCheckBox = findViewById(R.id.thursdayCheckBox);
+        fridayCheckBox = findViewById(R.id.fridayCheckBox);
+        saturdayCheckBox = findViewById(R.id.saturdayCheckBox);
+        sundayCheckBox = findViewById(R.id.sundayCheckBox);
+        timePicker = findViewById(R.id.timePicker);
         saveHabitButton = findViewById(R.id.saveHabitButton);
-        daysLayout = findViewById(R.id.daysLayout);
-        timeInputLayout = findViewById(R.id.timeInputsLayout);
 
-        // Dynamically add checkboxes for each day of the week
-        for (int i = 0; i < daysOfWeek.length; i++) {
-            CheckBox checkBox = new CheckBox(this);
-            checkBox.setText(daysOfWeek[i]);
-            final int index = i;  // Capture the index for the listener
-            checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> selectedDays[index] = isChecked);
-            daysLayout.addView(checkBox);
-        }
-
-        // Use TimePickerDialog to set the time for the habit
-        Button setTimeButton = new Button(this);
-        setTimeButton.setText("Set Habit Time");
-        setTimeButton.setOnClickListener(v -> showTimePickerDialog());
-        timeInputLayout.addView(setTimeButton);
-
-        // Save habit button listener
         saveHabitButton.setOnClickListener(v -> {
+            // Get the habit name
             String habitName = habitNameEditText.getText().toString().trim();
 
+            // Get the selected days
+            ArrayList<String> habitDays = new ArrayList<>();
+            if (mondayCheckBox.isChecked()) habitDays.add("Monday");
+            if (tuesdayCheckBox.isChecked()) habitDays.add("Tuesday");
+            if (wednesdayCheckBox.isChecked()) habitDays.add("Wednesday");
+            if (thursdayCheckBox.isChecked()) habitDays.add("Thursday");
+            if (fridayCheckBox.isChecked()) habitDays.add("Friday");
+            if (saturdayCheckBox.isChecked()) habitDays.add("Saturday");
+            if (sundayCheckBox.isChecked()) habitDays.add("Sunday");
+
+            // Get the selected time
+            int hour = timePicker.getHour();
+            int minute = timePicker.getMinute();
+            String habitTime = String.format("%02d:%02d", hour, minute);
+
+            // Check if the habit name is empty
             if (habitName.isEmpty()) {
-                Toast.makeText(this, "Please enter a habit name", Toast.LENGTH_SHORT).show();
+                Toast.makeText(HabitCreationActivity.this, "Please enter a habit name", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            StringBuilder selectedDaysStr = new StringBuilder();
-            for (int i = 0; i < selectedDays.length; i++) {
-                if (selectedDays[i]) {
-                    if (selectedDaysStr.length() > 0) selectedDaysStr.append(", ");
-                    selectedDaysStr.append(daysOfWeek[i]);
-                }
-            }
-
-            if (selectedDaysStr.length() == 0) {
-                Toast.makeText(this, "Please select at least one day", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            if (selectedTime.isEmpty()) {
-                Toast.makeText(this, "Please set a time for your habit", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            // Return the habit details back to the MainActivity
-            String newHabit = habitName + " (" + selectedDaysStr.toString() + ") - Time: " + selectedTime;
+            // Send data back to MainActivity
             Intent resultIntent = new Intent();
-            resultIntent.putExtra("newHabit", newHabit);
+            resultIntent.putExtra("habitName", habitName);
+            resultIntent.putStringArrayListExtra("habitDays", habitDays);
+            resultIntent.putExtra("habitTime", habitTime);
             setResult(RESULT_OK, resultIntent);
-            finish();  // Close the activity and return to MainActivity
-        });
-    }
 
-    private void showTimePickerDialog() {
-        // Open a TimePickerDialog to select the time for the habit
-        TimePickerFragment timePicker = new TimePickerFragment();
-        timePicker.setTimeListener((view, hourOfDay, minute) -> {
-            selectedTime = String.format("%02d:%02d", hourOfDay, minute); // Format the time
-            Toast.makeText(HabitCreationActivity.this, "Time Set: " + selectedTime, Toast.LENGTH_SHORT).show();
+            // Finish activity and return to MainActivity
+            finish();
         });
-        timePicker.show(getSupportFragmentManager(), "timePicker");
     }
 }

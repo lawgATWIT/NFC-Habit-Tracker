@@ -5,34 +5,62 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- EditText for habit name -->
+    <!-- Habit Name Input -->
     <EditText
         android:id="@+id/habitNameEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Habit Name"
+        android:hint="Enter Habit Name"
         android:inputType="text" />
 
-    <!-- LinearLayout for days of the week -->
-    <LinearLayout
-        android:id="@+id/daysLayout"
+    <!-- Days of the Week (Checkboxes) -->
+    <CheckBox
+        android:id="@+id/mondayCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Monday" />
+    <CheckBox
+        android:id="@+id/tuesdayCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tuesday" />
+    <CheckBox
+        android:id="@+id/wednesdayCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Wednesday" />
+    <CheckBox
+        android:id="@+id/thursdayCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Thursday" />
+    <CheckBox
+        android:id="@+id/fridayCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Friday" />
+    <CheckBox
+        android:id="@+id/saturdayCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Saturday" />
+    <CheckBox
+        android:id="@+id/sundayCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sunday" />
+
+    <!-- Time Picker -->
+    <TimePicker
+        android:id="@+id/timePicker"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"/>
+        android:timePickerMode="spinner" />
 
-    <!-- Button for setting time -->
-    <LinearLayout
-        android:id="@+id/timeInputsLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"/>
-
-    <!-- Save Button -->
+    <!-- Save Habit Button -->
     <Button
         android:id="@+id/saveHabitButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Save Habit"
-        android:layout_gravity="center"
-        android:padding="16dp" />
+        android:text="Save Habit" />
 </LinearLayout>

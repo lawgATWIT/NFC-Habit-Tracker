@@ -2,54 +2,59 @@ package com.example.nfc_habit_tracker;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ListView habitListView;
-    private Button addHabitButton;
-    private ArrayList<String> habitList;
-    private ArrayAdapter<String> habitAdapter;
+    private RecyclerView habitRecyclerView;
+    private HabitAdapter habitAdapter;
+    private ArrayList<Habit> habitList;
+    private Button addNewHabitButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        habitListView = findViewById(R.id.habitListView);
-        addHabitButton = findViewById(R.id.addHabitButton);
+        // Initialize views
+        habitRecyclerView = findViewById(R.id.habitRecyclerView);
+        addNewHabitButton = findViewById(R.id.addNewHabitButton);
 
-        // Initialize habit list
+        // Initialize habit list and adapter
         habitList = new ArrayList<>();
-        habitAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, habitList);
-        habitListView.setAdapter(habitAdapter);
+        habitAdapter = new HabitAdapter(habitList);
 
-        // Add habit button listener
-        addHabitButton.setOnClickListener(v -> {
+        // Set up RecyclerView with the HabitAdapter
+        habitRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        habitRecyclerView.setAdapter(habitAdapter);
+
+        // Button click listener to add a new habit
+        addNewHabitButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, HabitCreationActivity.class);
             startActivityForResult(intent, 1);
         });
     }
 
-    // Handle result from HabitCreationActivity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == 1 && resultCode == RESULT_OK) {
-            String newHabit = data.getStringExtra("newHabit");
-            if (newHabit != null && !newHabit.isEmpty()) {
-                habitList.add(newHabit);  // Add new habit to the list
-                habitAdapter.notifyDataSetChanged();  // Refresh the ListView
-            }
-        } else {
-            Toast.makeText(this, "Error while adding habit!", Toast.LENGTH_SHORT).show();
+        if (resultCode == RESULT_OK && requestCode == 1) {
+            // Retrieve the habit data from HabitCreationActivity
+            String habitName = data.getStringExtra("habitName");
+            ArrayList<String> habitDays = data.getStringArrayListExtra("habitDays");
+            String habitTime = data.getStringExtra("habitTime");
+
+            // Add the new habit to the list and notify the adapter
+            habitList.add(new Habit(habitName, habitDays, habitTime));
+            habitAdapter.notifyDataSetChanged(); // Update the RecyclerView
         }
     }
 }

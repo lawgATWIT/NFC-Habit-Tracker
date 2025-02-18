@@ -5,19 +5,32 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- ListView to show habits -->
-    <ListView
-        android:id="@+id/habitListView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-    <!-- Add Habit Button -->
-    <Button
-        android:id="@+id/addHabitButton"
+    <!-- Title/Label -->
+    <TextView
+        android:id="@+id/landingPageTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Add New Habit"
+        android:text="Habit Tracker"
+        android:textSize="24sp"
+        android:textStyle="bold"
         android:layout_gravity="center"
-        android:padding="16dp" />
+        android:paddingBottom="16dp"/>
+
+    <!-- RecyclerView for displaying habit list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/habitRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Add New Habit Button -->
+    <Button
+        android:id="@+id/addNewHabitButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Add New Habit"
+        android:textSize="16sp"
+        android:layout_gravity="center"/>
+
 </LinearLayout>

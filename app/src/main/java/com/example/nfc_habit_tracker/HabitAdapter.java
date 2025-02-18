@@ -1,35 +1,62 @@
 package com.example.nfc_habit_tracker;
 
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import java.util.List;
+import androidx.recyclerview.widget.RecyclerView;
 
-public class HabitAdapter extends ArrayAdapter<String> {
+import java.util.ArrayList;
 
-    private final Context context;
-    private final List<String> habits;
+public class HabitAdapter extends RecyclerView.Adapter<HabitAdapter.HabitViewHolder> {
 
-    public HabitAdapter(Context context, List<String> habits) {
-        super(context, 0, habits);
-        this.context = context;
-        this.habits = habits;
+    private ArrayList<Habit> habitList;
+
+    public HabitAdapter(ArrayList<Habit> habitList) {
+        this.habitList = habitList;
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        if (convertView == null) {
-            convertView = LayoutInflater.from(context).inflate(android.R.layout.simple_list_item_1, parent, false);
+    public HabitViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        // Inflate habit item layout
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.habit_list_item, parent, false);
+        return new HabitViewHolder(view);
+    }
+
+    @Override
+    public void onBindViewHolder(HabitViewHolder holder, int position) {
+        // Set habit name, days, and time on the item view
+        Habit currentHabit = habitList.get(position);
+        holder.habitNameTextView.setText(currentHabit.getName());
+
+        // Format days of the week into a string
+        StringBuilder daysString = new StringBuilder();
+        for (String day : currentHabit.getDays()) {
+            daysString.append(day).append(" ");
         }
+        holder.habitDaysTextView.setText(daysString.toString().trim());
+        holder.habitTimeTextView.setText(currentHabit.getTime());
+    }
 
-        String habit = habits.get(position);
-        TextView textView = convertView.findViewById(android.R.id.text1);
-        textView.setText(habit);
+    @Override
+    public int getItemCount() {
+        return habitList.size();
+    }
 
-        return convertView;
+    public static class HabitViewHolder extends RecyclerView.ViewHolder {
+
+        public TextView habitNameTextView;
+        public TextView habitDaysTextView;
+        public TextView habitTimeTextView;
+
+        public HabitViewHolder(View itemView) {
+            super(itemView);
+
+            habitNameTextView = itemView.findViewById(R.id.habitNameTextView);
+            habitDaysTextView = itemView.findViewById(R.id.habitDaysTextView);
+            habitTimeTextView = itemView.findViewById(R.id.habitTimeTextView);
+        }
     }
 }

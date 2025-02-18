@@ -7,6 +7,8 @@
         android:icon="@mipmap/ic_launcher"
         android:label="NFC Habit Tracker"
         android:theme="@style/Theme.AppCompat.DayNight">
+
+        <!-- Main Activity, entry point of the app -->
         <activity android:name=".MainActivity"
             android:exported="true"
             android:label="MainActivity">
@@ -16,8 +18,10 @@
             </intent-filter>
         </activity>
 
+        <!-- Habit Creation Activity, for creating a new habit -->
         <activity android:name=".HabitCreationActivity"
             android:label="Create Habit"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
     </application>
 </manifest>
