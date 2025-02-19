@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "nfc-habit-tracker"
+rootProject.name = "nfchabittracker"
 include(":app")

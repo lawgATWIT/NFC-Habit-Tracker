@@ -1,27 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.nfc_habit_tracker">
+    package="com.example.nfchabittracker">
+
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="NFC Habit Tracker"
-        android:theme="@style/Theme.AppCompat.DayNight">
-
-        <!-- Main Activity, entry point of the app -->
-        <activity android:name=".MainActivity"
-            android:exported="true"
-            android:label="MainActivity">
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.NfcHabitTracker">
+        <activity
+            android:name=".CreateHabitActivity"
+            android:exported="false"
+            android:label="Create New Habit"
+            android:parentActivityName=".MainActivity"/>
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Habit Creation Activity, for creating a new habit -->
-        <activity android:name=".HabitCreationActivity"
-            android:label="Create Habit"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
-
+        <receiver android:name=".HabitBroadcastReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.example.nfchabittracker.HABIT_NOTIFICATION" />
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
     </application>
+
 </manifest>
