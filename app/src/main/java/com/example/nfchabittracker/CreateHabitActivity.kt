@@ -1,13 +1,20 @@
 package com.example.nfchabittracker
 
+import android.Manifest
 import android.app.*
 import android.content.*
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.*
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.text.SimpleDateFormat
 import java.util.*
 
 class CreateHabitActivity : AppCompatActivity() {
@@ -21,20 +28,20 @@ class CreateHabitActivity : AppCompatActivity() {
     private lateinit var fridayCheckBox: CheckBox
     private lateinit var saturdayCheckBox: CheckBox
     private lateinit var sundayCheckBox: CheckBox
-    private lateinit var hourNumberPicker: NumberPicker // NumberPickers for time
-    private lateinit var minuteNumberPicker: NumberPicker // NumberPickers for time
+    private lateinit var hourNumberPicker: NumberPicker
+    private lateinit var minuteNumberPicker: NumberPicker
     private lateinit var saveHabitButton: Button
 
     private var selectedHour = 0
     private var selectedMinute = 0
-    private lateinit var sharedPreferences: SharedPreferences // lateinit property
+    private lateinit var sharedPreferences: SharedPreferences
     private val gson = Gson()
+    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String> // for permission request
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_habit)
 
-        // Initialize sharedPreferences here in onCreate!
         sharedPreferences = getSharedPreferences("HabitPrefs", Context.MODE_PRIVATE)
 
         habitNameEditText = findViewById(R.id.habitNameEditText)
@@ -46,15 +53,31 @@ class CreateHabitActivity : AppCompatActivity() {
         fridayCheckBox = findViewById(R.id.fridayCheckBox)
         saturdayCheckBox = findViewById(R.id.saturdayCheckBox)
         sundayCheckBox = findViewById(R.id.sundayCheckBox)
-        hourNumberPicker = findViewById(R.id.hourNumberPicker) // Initialize NumberPickers
-        minuteNumberPicker = findViewById(R.id.minuteNumberPicker) // Initialize NumberPickers
+        hourNumberPicker = findViewById(R.id.hourNumberPicker)
+        minuteNumberPicker = findViewById(R.id.minuteNumberPicker)
         saveHabitButton = findViewById(R.id.saveHabitButton)
 
-        setupTimeNumberPickers() // Setup NumberPickers
+        setupTimeNumberPickers()
 
         saveHabitButton.setOnClickListener {
             saveHabit()
         }
+
+        // Initialize permission request launcher
+        requestPermissionLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+                if (isGranted) {
+                    // Notification permission granted, proceed with scheduling (saveHabit will handle scheduling)
+                    Toast.makeText(this, "Notification permission granted.", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Explain that notifications are needed for the app to function correctly
+                    Toast.makeText(
+                        this,
+                        "Notifications are needed to remind you of your habits.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
     }
 
     private fun setupTimeNumberPickers() {
@@ -62,7 +85,7 @@ class CreateHabitActivity : AppCompatActivity() {
         hourNumberPicker.maxValue = 23
         minuteNumberPicker.minValue = 0
         minuteNumberPicker.maxValue = 59
-        minuteNumberPicker.setFormatter { String.format("%02d", it) } // Format minutes to always show 2 digits
+        minuteNumberPicker.setFormatter { String.format("%02d", it) }
 
         val calendar = Calendar.getInstance()
         selectedHour = calendar.get(Calendar.HOUR_OF_DAY)
@@ -73,7 +96,6 @@ class CreateHabitActivity : AppCompatActivity() {
         hourNumberPicker.setOnValueChangedListener { _, _, newVal -> selectedHour = newVal }
         minuteNumberPicker.setOnValueChangedListener { _, _, newVal -> selectedMinute = newVal }
     }
-
 
     private fun saveHabit() {
         val habitName = habitNameEditText.text.toString()
@@ -97,13 +119,33 @@ class CreateHabitActivity : AppCompatActivity() {
             return
         }
 
+        // Check and request notification permission *before* scheduling
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13 (Tiramisu) and above
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // Request notification permission
+                requestNotificationPermission()
+                return // Exit saveHabit - notification will be scheduled after permission is granted (or not, if denied)
+            }
+        }
+
 
         val habit = Habit(habitName, notificationMessage, daysOfWeek, selectedHour, selectedMinute)
         saveHabitToSharedPreferences(habit)
         scheduleNotification(habit)
 
         Toast.makeText(this, "Habit saved!", Toast.LENGTH_SHORT).show()
-        finish() // Go back to MainActivity
+        finish()
+    }
+
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 
 
@@ -124,10 +166,64 @@ class CreateHabitActivity : AppCompatActivity() {
         }
     }
 
-
     private fun scheduleNotification(habit: Habit) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
+        // Check for SCHEDULE_EXACT_ALARM permission on Android 12+ (already present)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!alarmManager.canScheduleExactAlarms()) {
+                Toast.makeText(
+                    this,
+                    "For precise notifications, please allow 'Schedule exact alarms' in App settings.",
+                    Toast.LENGTH_LONG
+                ).show()
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                    data = Uri.fromParts("package", packageName, null)
+                }
+                startActivity(intent)
+                return
+            }
+        }
+
+
+        // --- Test Notification Scheduling (10 seconds and repeat every 10 seconds for *5 minutes*) ---
+        val startTimeMillis = System.currentTimeMillis() + 10000 // 10 seconds from now
+        val intervalMillis: Long = 10000 // 10 seconds
+        val endTimeMillis = startTimeMillis + (5 * 60 * 1000) // *5 minutes* from start time
+        val notificationCount = (5 * 60 * 1000) / 10000 // Number of notifications in 5 minutes
+
+        for (i in 0..notificationCount) {
+            val triggerTime = startTimeMillis + (i * intervalMillis)
+
+            val intent = Intent(this, HabitBroadcastReceiver::class.java).apply {
+                action = "com.example.nfchabittracker.HABIT_NOTIFICATION"
+                putExtra("habitName", habit.name)
+                putExtra("notificationMessage", habit.notificationMessage)
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                this,
+                generateTestNotificationId(habit.name, i),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                )
+            }
+        }
+        // --- End of Test Notification Scheduling ---
+
+        /*  --- Original Weekly Scheduling (commented out for testing) ---
         habit.daysOfWeek.forEach { dayOfWeek ->
             val calendar = Calendar.getInstance().apply {
                 timeInMillis = System.currentTimeMillis()
@@ -150,11 +246,10 @@ class CreateHabitActivity : AppCompatActivity() {
             }
             val pendingIntent = PendingIntent.getBroadcast(
                 this,
-                generateNotificationId(habit.name, dayOfWeek), // Unique ID for each habit and day
+                generateNotificationId(habit.name, dayOfWeek),
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-
 
             alarmManager.setRepeating(
                 AlarmManager.RTC_WAKEUP,
@@ -163,9 +258,12 @@ class CreateHabitActivity : AppCompatActivity() {
                 pendingIntent
             )
         }
+        --- End of Original Weekly Scheduling ---
+        */
     }
 
-    private fun generateNotificationId(habitName: String, dayOfWeek: Int): Int {
-        return (habitName + dayOfWeek.toString()).hashCode()
+    // Modified notification ID for testing
+    private fun generateTestNotificationId(habitName: String, notificationIndex: Int): Int {
+        return (habitName + "test" + notificationIndex.toString()).hashCode()
     }
 }
