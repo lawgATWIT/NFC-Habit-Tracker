@@ -1,126 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true">
+    android:orientation="vertical">
 
-    <LinearLayout
+    <!-- Toolbar to prevent title bar overlap -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary" />
+
+    <!-- ScrollView for the content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:padding="16dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Habit Name:"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
-
-        <EditText
-            android:id="@+id/habitNameEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:layout_marginBottom="16dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Notification Message:"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
-
-        <EditText
-            android:id="@+id/notificationMessageEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textMultiLine"
-            android:layout_marginBottom="16dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Days of the Week:"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"  android:layout_marginBottom="16dp">
+            android:orientation="vertical">
 
-            <CheckBox
-                android:id="@+id/mondayCheckBox"
+            <!-- Habit Name Input -->
+            <EditText
+                android:id="@+id/habitNameEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Monday"/>
-            <CheckBox
-                android:id="@+id/tuesdayCheckBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Tuesday"/>
-            <CheckBox
-                android:id="@+id/wednesdayCheckBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Wednesday"/>
-            <CheckBox
-                android:id="@+id/thursdayCheckBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Thursday"/>
-            <CheckBox
-                android:id="@+id/fridayCheckBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Friday"/>
-            <CheckBox
-                android:id="@+id/saturdayCheckBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Saturday"/>
-            <CheckBox
-                android:id="@+id/sundayCheckBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Sunday"/>
-        </LinearLayout>
+                android:hint="Enter Habit Name"
+                android:inputType="text"
+                android:layout_marginBottom="8dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Time of Day:"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
+            <!-- Notification Message Input -->
+            <EditText
+                android:id="@+id/notificationMessageEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter Notification Message"
+                android:inputType="text"
+                android:layout_marginBottom="16dp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginBottom="16dp">
-
-            <NumberPicker
-                android:id="@+id/hourNumberPicker"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
+            <!-- Days of the Week Checkboxes -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text=":"
-                android:textAppearance="@style/TextAppearance.AppCompat.Large"/>
+                android:text="Select Days:"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
 
-            <NumberPicker
-                android:id="@+id/minuteNumberPicker"
+            <CheckBox
+                android:id="@+id/mondayCheckBox"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:text="Monday"
+                android:layout_marginBottom="4dp" />
+            <CheckBox
+                android:id="@+id/tuesdayCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tuesday"
+                android:layout_marginBottom="4dp" />
+            <CheckBox
+                android:id="@+id/wednesdayCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Wednesday"
+                android:layout_marginBottom="4dp" />
+            <CheckBox
+                android:id="@+id/thursdayCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Thursday"
+                android:layout_marginBottom="4dp" />
+            <CheckBox
+                android:id="@+id/fridayCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Friday"
+                android:layout_marginBottom="4dp" />
+            <CheckBox
+                android:id="@+id/saturdayCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Saturday"
+                android:layout_marginBottom="4dp" />
+            <CheckBox
+                android:id="@+id/sundayCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sunday"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Time Selection with NumberPickers -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Set Time:"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="16dp">
+
+                <NumberPicker
+                    android:id="@+id/hourNumberPicker"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+                <NumberPicker
+                    android:id="@+id/minuteNumberPicker"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <!-- Save Habit Button -->
+            <Button
+                android:id="@+id/saveButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save Habit"
+                android:layout_gravity="center_horizontal" />
         </LinearLayout>
-
-
-        <Button
-            android:id="@+id/saveHabitButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Save Habit"
-            android:layout_gravity="center_horizontal"/>
-
-    </LinearLayout>
-</ScrollView>
+    </ScrollView>
+</LinearLayout>

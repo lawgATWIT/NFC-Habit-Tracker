@@ -1,27 +1,33 @@
 package com.example.nfchabittracker
 
-import android.Manifest
-import android.app.*
-import android.content.*
-import android.content.pm.PackageManager
-import android.net.Uri
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager // Added this import
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log // Import Log
-import android.widget.*
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
+import android.util.Log
+import android.widget.Button
+import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.NumberPicker
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.util.*
+import java.util.Calendar
 
 class CreateHabitActivity : AppCompatActivity() {
 
     private lateinit var habitNameEditText: EditText
     private lateinit var notificationMessageEditText: EditText
+    private lateinit var saveButton: Button
+    private lateinit var hourNumberPicker: NumberPicker
+    private lateinit var minuteNumberPicker: NumberPicker
     private lateinit var mondayCheckBox: CheckBox
     private lateinit var tuesdayCheckBox: CheckBox
     private lateinit var wednesdayCheckBox: CheckBox
@@ -29,24 +35,27 @@ class CreateHabitActivity : AppCompatActivity() {
     private lateinit var fridayCheckBox: CheckBox
     private lateinit var saturdayCheckBox: CheckBox
     private lateinit var sundayCheckBox: CheckBox
-    private lateinit var hourNumberPicker: NumberPicker
-    private lateinit var minuteNumberPicker: NumberPicker
-    private lateinit var saveHabitButton: Button
 
-    private var selectedHour = 0
-    private var selectedMinute = 0
-    private lateinit var sharedPreferences: SharedPreferences
-    private val gson = Gson()
-    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String> // for permission request
+    private var selectedHour: Int = 0
+    private var selectedMinute: Int = 0
+
+    companion object {
+        private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1001
+        private const val NOTIFICATION_INTERVAL_MS = 10_000L // 10 seconds
+        private const val NOTIFICATION_DURATION_MS = 120_000L // 2 minutes
+        private const val TAG = "CreateHabitActivity"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_habit)
-
-        sharedPreferences = getSharedPreferences("HabitPrefs", Context.MODE_PRIVATE)
+        Log.d(TAG, "CreateHabitActivity started")
 
         habitNameEditText = findViewById(R.id.habitNameEditText)
         notificationMessageEditText = findViewById(R.id.notificationMessageEditText)
+        saveButton = findViewById(R.id.saveButton)
+        hourNumberPicker = findViewById(R.id.hourNumberPicker)
+        minuteNumberPicker = findViewById(R.id.minuteNumberPicker)
         mondayCheckBox = findViewById(R.id.mondayCheckBox)
         tuesdayCheckBox = findViewById(R.id.tuesdayCheckBox)
         wednesdayCheckBox = findViewById(R.id.wednesdayCheckBox)
@@ -54,39 +63,11 @@ class CreateHabitActivity : AppCompatActivity() {
         fridayCheckBox = findViewById(R.id.fridayCheckBox)
         saturdayCheckBox = findViewById(R.id.saturdayCheckBox)
         sundayCheckBox = findViewById(R.id.sundayCheckBox)
-        hourNumberPicker = findViewById(R.id.hourNumberPicker)
-        minuteNumberPicker = findViewById(R.id.minuteNumberPicker)
-        saveHabitButton = findViewById(R.id.saveHabitButton)
 
-        setupTimeNumberPickers()
-
-        saveHabitButton.setOnClickListener {
-            saveHabit()
-        }
-
-        // Initialize permission request launcher
-        requestPermissionLauncher =
-            registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-                if (isGranted) {
-                    // Notification permission granted, proceed with scheduling (saveHabit will handle scheduling)
-                    Toast.makeText(this, "Notification permission granted.", Toast.LENGTH_SHORT).show()
-                } else {
-                    // Explain that notifications are needed for the app to function correctly
-                    Toast.makeText(
-                        this,
-                        "Notifications are needed to remind you of your habits.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-    }
-
-    private fun setupTimeNumberPickers() {
         hourNumberPicker.minValue = 0
         hourNumberPicker.maxValue = 23
         minuteNumberPicker.minValue = 0
         minuteNumberPicker.maxValue = 59
-        minuteNumberPicker.setFormatter { String.format("%02d", it) }
 
         val calendar = Calendar.getInstance()
         selectedHour = calendar.get(Calendar.HOUR_OF_DAY)
@@ -96,164 +77,118 @@ class CreateHabitActivity : AppCompatActivity() {
 
         hourNumberPicker.setOnValueChangedListener { _, _, newVal -> selectedHour = newVal }
         minuteNumberPicker.setOnValueChangedListener { _, _, newVal -> selectedMinute = newVal }
-    }
 
-    private fun saveHabit() {
-        val habitName = habitNameEditText.text.toString()
-        val notificationMessage = notificationMessageEditText.text.toString()
-        if (habitName.isEmpty()) {
-            Toast.makeText(this, "Habit name cannot be empty", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val daysOfWeek = mutableSetOf<Int>()
-        if (mondayCheckBox.isChecked) daysOfWeek.add(Calendar.MONDAY)
-        if (tuesdayCheckBox.isChecked) daysOfWeek.add(Calendar.TUESDAY)
-        if (wednesdayCheckBox.isChecked) daysOfWeek.add(Calendar.WEDNESDAY)
-        if (thursdayCheckBox.isChecked) daysOfWeek.add(Calendar.THURSDAY)
-        if (fridayCheckBox.isChecked) daysOfWeek.add(Calendar.FRIDAY)
-        if (saturdayCheckBox.isChecked) daysOfWeek.add(Calendar.SATURDAY)
-        if (sundayCheckBox.isChecked) daysOfWeek.add(Calendar.SUNDAY)
-
-        if (daysOfWeek.isEmpty()) {
-            Toast.makeText(this, "Please select at least one day of the week", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // Check and request notification permission *before* scheduling (for Post Notifications - Android 13+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13 (Tiramisu) and above
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                // Request notification permission
-                requestNotificationPermission()
-                return // Exit saveHabit - notification will be scheduled after permission is granted (or not, if denied)
+        saveButton.setOnClickListener {
+            Log.d(TAG, "Save button clicked")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST_CODE)
+                } else {
+                    saveHabitAndScheduleAlarms()
+                }
+            } else {
+                saveHabitAndScheduleAlarms()
             }
         }
+    }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            saveHabitAndScheduleAlarms()
+        } else {
+            Toast.makeText(this, "Notification permission required", Toast.LENGTH_LONG).show()
+        }
+    }
 
-        val habit = Habit(habitName, notificationMessage, daysOfWeek, selectedHour, selectedMinute)
-        saveHabitToSharedPreferences(habit)
-        scheduleNotification(habit)
+    private fun saveHabitAndScheduleAlarms() {
+        val name = habitNameEditText.text.toString()
+        val message = notificationMessageEditText.text.toString()
 
-        Toast.makeText(this, "Habit saved!", Toast.LENGTH_SHORT).show()
+        if (name.isBlank() || message.isBlank()) {
+            Toast.makeText(this, "Please enter a name and message", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val selectedDays = mutableSetOf<Int>()
+        if (mondayCheckBox.isChecked) selectedDays.add(Calendar.MONDAY)
+        if (tuesdayCheckBox.isChecked) selectedDays.add(Calendar.TUESDAY)
+        if (wednesdayCheckBox.isChecked) selectedDays.add(Calendar.WEDNESDAY)
+        if (thursdayCheckBox.isChecked) selectedDays.add(Calendar.THURSDAY)
+        if (fridayCheckBox.isChecked) selectedDays.add(Calendar.FRIDAY)
+        if (saturdayCheckBox.isChecked) selectedDays.add(Calendar.SATURDAY)
+        if (sundayCheckBox.isChecked) selectedDays.add(Calendar.SUNDAY)
+
+        if (selectedDays.isEmpty()) {
+            Toast.makeText(this, "Please select at least one day", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val habit = Habit(name, message, selectedDays, selectedHour, selectedMinute)
+        val sharedPreferences = getSharedPreferences("HabitPrefs", Context.MODE_PRIVATE)
+        val gson = Gson()
+        val habitList = mutableListOf<Habit>()
+        val habitsJson = sharedPreferences.getString("habitList", null)
+        if (habitsJson != null) {
+            val type = object : TypeToken<List<Habit>>() {}.type
+            habitList.addAll(gson.fromJson(habitsJson, type) ?: emptyList())
+        }
+        habitList.add(habit)
+        sharedPreferences.edit().putString("habitList", gson.toJson(habitList)).apply()
+        Log.d(TAG, "Habit '$name' saved")
+
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            Toast.makeText(this, "Please grant exact alarm permission", Toast.LENGTH_LONG).show()
+            startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+            return
+        }
+
+        scheduleHabitNotifications(alarmManager, habit)
+        Toast.makeText(this, "Habit '$name' created", Toast.LENGTH_SHORT).show()
         finish()
     }
 
+    private fun scheduleHabitNotifications(alarmManager: AlarmManager, habit: Habit) {
+        for (day in habit.daysOfWeek) {
+            val calendar = Calendar.getInstance().apply {
+                set(Calendar.DAY_OF_WEEK, day)
+                set(Calendar.HOUR_OF_DAY, habit.timeOfDayHour)
+                set(Calendar.MINUTE, habit.timeOfDayMinute)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                if (timeInMillis < System.currentTimeMillis()) add(Calendar.WEEK_OF_YEAR, 1)
+            }
 
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-    }
+            val startTime = calendar.timeInMillis
+            val endTime = startTime + NOTIFICATION_DURATION_MS
+            var currentTime = startTime
+            var iteration = 0
 
-
-    private fun saveHabitToSharedPreferences(habit: Habit) {
-        val habitList = loadHabitsFromSharedPreferences().toMutableList()
-        habitList.add(habit)
-        val habitsJson = gson.toJson(habitList)
-        sharedPreferences.edit().putString("habitList", habitsJson).apply()
-    }
-
-    private fun loadHabitsFromSharedPreferences(): List<Habit> {
-        val habitsJson = sharedPreferences.getString("habitList", null)
-        return if (habitsJson != null) {
-            val type = object : TypeToken<List<Habit>>() {}.type
-            gson.fromJson(habitsJson, type) ?: emptyList()
-        } else {
-            emptyList()
-        }
-    }
-
-    private fun scheduleNotification(habit: Habit) {
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-        // Check for SCHEDULE_EXACT_ALARM permission on Android 12+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!alarmManager.canScheduleExactAlarms()) {
-                Toast.makeText(
+            while (currentTime <= endTime) {
+                val intent = Intent(this, HabitBroadcastReceiver::class.java).apply {
+                    action = "com.example.nfchabittracker.HABIT_NOTIFICATION"
+                    putExtra("habitName", habit.name)
+                    putExtra("notificationMessage", habit.notificationMessage)
+                }
+                val requestCode = (habit.name + day.toString() + iteration).hashCode() // Unique per iteration
+                val pendingIntent = PendingIntent.getBroadcast(
                     this,
-                    "For precise notifications, please allow 'Schedule exact alarms' in App settings.",
-                    Toast.LENGTH_LONG
-                ).show()
-                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                    data = Uri.fromParts("package", packageName, null)
+                    requestCode,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, currentTime, pendingIntent)
+                } else {
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, currentTime, pendingIntent)
                 }
-                startActivity(intent)
-                return
-            } else {
-                // Explicitly check SCHEDULE_EXACT_ALARM permission using checkSelfPermission (for Lint)
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.SCHEDULE_EXACT_ALARM) != PackageManager.PERMISSION_GRANTED) {
-                    Log.w("CreateHabitActivity", "SCHEDULE_EXACT_ALARM permission not explicitly granted, but canScheduleExactAlarms() is true. This is unexpected.")
-                    // In theory, we shouldn't reach here if canScheduleExactAlarms() is true, but for extra robustness, maybe handle it.
-                    Toast.makeText(this, "Exact alarm scheduling might be restricted.", Toast.LENGTH_SHORT).show()
-                    return; // Stop scheduling if explicit check fails (though unlikely)
-                }
+                Log.d(TAG, "Scheduled notification for '${habit.name}' on day $day at ${Calendar.getInstance().apply { timeInMillis = currentTime }.time} (iteration $iteration, requestCode $requestCode)")
+
+                currentTime += NOTIFICATION_INTERVAL_MS
+                iteration++
             }
         }
-
-
-        // --- Test Notification Scheduling (10 seconds and repeat every 10 seconds for *5 minutes*) ---
-        val startTimeMillis = System.currentTimeMillis() + 10000 // 10 seconds from now
-        val intervalMillis: Long = 10000 // 10 seconds
-        val endTimeMillis = startTimeMillis + (5 * 60 * 1000) // *5 minutes* from start time
-        val notificationCount = (5 * 60 * 1000) / 10000 // Number of notifications in 5 minutes
-
-        for (i in 0..notificationCount) {
-            val triggerTime = startTimeMillis + (i * intervalMillis)
-
-            val intent = Intent(this, HabitBroadcastReceiver::class.java).apply {
-                action = "com.example.nfchabittracker.HABIT_NOTIFICATION"
-                putExtra("habitName", habit.name)
-                putExtra("notificationMessage", habit.notificationMessage)
-            }
-            val pendingIntent = PendingIntent.getBroadcast(
-                this,
-                generateTestNotificationId(habit.name, i),
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                try {
-                    alarmManager.setExactAndAllowWhileIdle( // Try setting exact alarm
-                        AlarmManager.RTC_WAKEUP,
-                        triggerTime,
-                        pendingIntent
-                    )
-                } catch (e: SecurityException) { // Handle SecurityException just in case (less likely now with permission checks)
-                    Log.e("CreateHabitActivity", "SecurityException while scheduling exact alarm", e)
-                    Toast.makeText(this, "Alarm scheduling restricted: ${e.message}", Toast.LENGTH_LONG).show();
-                    return; // Stop scheduling if exception occurs
-                }
-            } else {
-                try {
-                    alarmManager.setExact( // Try setting exact alarm (fallback for older versions)
-                        AlarmManager.RTC_WAKEUP,
-                        triggerTime,
-                        pendingIntent
-                    )
-                } catch (e: SecurityException) { // Handle SecurityException for older versions as well
-                    Log.e("CreateHabitActivity", "SecurityException while scheduling exact alarm", e)
-                    Toast.makeText(this, "Alarm scheduling restricted: ${e.message}", Toast.LENGTH_LONG).show();
-                    return; // Stop scheduling if exception occurs
-                }
-            }
-        }
-        // --- End of Test Notification Scheduling ---
-
-        /*  --- Original Weekly Scheduling (commented out for testing) ---
-        habit.daysOfWeek.forEach { dayOfWeek ->
-            // ... (original weekly scheduling code - no changes here) ...
-        }
-        --- End of Original Weekly Scheduling ---
-        */
-    }
-
-    // Modified notification ID for testing
-    private fun generateTestNotificationId(habitName: String, notificationIndex: Int): Int {
-        return (habitName + "test" + notificationIndex.toString()).hashCode()
     }
 }

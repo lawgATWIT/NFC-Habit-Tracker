@@ -1,66 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:layout_height="match_parent">
 
-    <!-- Habit Name Input -->
-    <EditText
-        android:id="@+id/habitNameEditText"
+    <!-- Toolbar at the top -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Enter Habit Name"
-        android:inputType="text" />
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        android:elevation="4dp" />
 
-    <!-- Days of the Week (Checkboxes) -->
-    <CheckBox
-        android:id="@+id/mondayCheckBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Monday" />
-    <CheckBox
-        android:id="@+id/tuesdayCheckBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Tuesday" />
-    <CheckBox
-        android:id="@+id/wednesdayCheckBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Wednesday" />
-    <CheckBox
-        android:id="@+id/thursdayCheckBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Thursday" />
-    <CheckBox
-        android:id="@+id/fridayCheckBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Friday" />
-    <CheckBox
-        android:id="@+id/saturdayCheckBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Saturday" />
-    <CheckBox
-        android:id="@+id/sundayCheckBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Sunday" />
-
-    <!-- Time Picker -->
-    <TimePicker
-        android:id="@+id/timePicker"
+    <!-- Content area shifted down by the toolbar's height -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:timePickerMode="spinner" />
+        android:layout_height="match_parent"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:padding="16dp"
+        android:clipToPadding="false">
 
-    <!-- Save Habit Button -->
-    <Button
-        android:id="@+id/saveHabitButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Save Habit" />
-</LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Habit Name Input -->
+            <EditText
+                android:id="@+id/habitNameEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter Habit Name"
+                android:inputType="text" />
+
+            <!-- Notification Message Input -->
+            <EditText
+                android:id="@+id/notificationMessageEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter Notification Message"
+                android:inputType="text" />
+
+            <!-- Days of the Week Checkboxes -->
+            <CheckBox
+                android:id="@+id/mondayCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Monday" />
+            <!-- Add additional checkboxes for Tuesday to Sunday if needed -->
+
+            <!-- Time Picker in Spinner (dial) mode -->
+            <TimePicker
+                android:id="@+id/timePicker"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:timePickerMode="spinner" />
+
+            <!-- Save Habit Button -->
+            <Button
+                android:id="@+id/saveHabitButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save Habit" />
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

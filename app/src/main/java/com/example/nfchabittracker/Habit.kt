@@ -7,5 +7,6 @@ data class Habit(
     val notificationMessage: String,
     val daysOfWeek: Set<Int>,
     val timeOfDayHour: Int,
-    val timeOfDayMinute: Int
+    val timeOfDayMinute: Int,
+    var snoozedUntil: Long? = null
 ) : Serializable
