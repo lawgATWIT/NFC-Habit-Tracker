@@ -8,5 +8,5 @@ data class Habit(
     val daysOfWeek: Set<Int>,
     val timeOfDayHour: Int,
     val timeOfDayMinute: Int,
-    var snoozedUntil: Long? = null
+    var snoozedUntil: Long = 0L
 ) : Serializable

@@ -9,6 +9,8 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class HabitBroadcastReceiver : BroadcastReceiver() {
 
@@ -21,15 +23,37 @@ class HabitBroadcastReceiver : BroadcastReceiver() {
         val notificationMessage = intent.getStringExtra("notificationMessage") ?: "Time for your habit!"
         Log.d(TAG, "Received alarm for '$habitName' with message '$notificationMessage'")
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                Log.e(TAG, "Cannot show notification: Missing POST_NOTIFICATIONS permission")
-                return
-            }
-        }
+        // Load habits from SharedPreferences
+        val sharedPreferences = context.getSharedPreferences("HabitPrefs", Context.MODE_PRIVATE)
+        val gson = Gson()
+        val habitsJson = sharedPreferences.getString("habitList", null)
 
-        createNotificationChannel(context)
-        showNotification(context, habitName, notificationMessage)
+        if (habitsJson != null) {
+            val type = object : TypeToken<List<Habit>>() {}.type
+            val habitList: List<Habit> = gson.fromJson(habitsJson, type) ?: emptyList()
+            val habit = habitList.find { it.name == habitName }
+
+            if (habit != null) {
+                // Check if habit is snoozed
+                if (habit.snoozedUntil == 0L || System.currentTimeMillis() > habit.snoozedUntil) {
+                    // Not snoozed or snooze expired, proceed with notification
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                            Log.e(TAG, "Cannot show notification: Missing POST_NOTIFICATIONS permission")
+                            return
+                        }
+                    }
+                    createNotificationChannel(context)
+                    showNotification(context, habitName, notificationMessage)
+                } else {
+                    Log.d(TAG, "Habit '$habitName' is snoozed until ${habit.snoozedUntil}, skipping notification")
+                }
+            } else {
+                Log.e(TAG, "Habit '$habitName' not found in shared preferences, skipping notification")
+            }
+        } else {
+            Log.e(TAG, "No habits found in shared preferences, skipping notification")
+        }
     }
 
     private fun createNotificationChannel(context: Context) {
