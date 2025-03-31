@@ -81,10 +81,6 @@ NFC-Habit-Tracker/
 3. **Run the App**:
    - Launch the app from your device's app drawer.
 
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
 ## Contact
 
 For questions or feedback, please contact [lawg@wit.edu].
