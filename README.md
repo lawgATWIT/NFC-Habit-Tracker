@@ -85,10 +85,6 @@ NFC-Habit-Tracker/
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests.
-
 ## Contact
 
 For questions or feedback, please contact [lawg@wit.edu].
