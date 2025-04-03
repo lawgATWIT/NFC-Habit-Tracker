@@ -32,7 +32,6 @@ class HabitItemAdapter(context: Context, private val habits: MutableList<Habit>)
         val daysTextView = view.findViewById<TextView>(R.id.habitDaysTextView)
         val timeTextView = view.findViewById<TextView>(R.id.habitTimeTextView)
         val snoozeButton = view.findViewById<Button>(R.id.snoozeButton)
-        val skipDayButton = view.findViewById<Button>(R.id.skipDayButton)
         val deleteButton = view.findViewById<Button>(R.id.deleteButton)
 
         nameTextView?.text = habit.name
@@ -75,9 +74,7 @@ class HabitItemAdapter(context: Context, private val habits: MutableList<Habit>)
             }
         }
 
-        skipDayButton?.setOnClickListener {
-            handleSkipDayButtonClick(habit)
-        }
+
 
         deleteButton?.setOnClickListener {
             handleDeleteButtonClick(context, habit, position)
