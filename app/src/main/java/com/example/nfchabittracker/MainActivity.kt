@@ -89,11 +89,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action) {
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action || 
+            NfcAdapter.ACTION_TAG_DISCOVERED == intent.action) { // Added fallback for ACTION_TAG_DISCOVERED
             val rawMessages = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
             if (rawMessages != null) {
                 val messages = rawMessages.map { it as NdefMessage }
                 processNdefMessages(messages)
+            } else {
+                Toast.makeText(this, "NFC tag detected but no NDEF messages found.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -205,12 +208,14 @@ class MainActivity : AppCompatActivity() {
         nfcAdapter?.let { adapter ->
             val pendingIntent = PendingIntent.getActivity(
                 this, 0, Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
-                PendingIntent.FLAG_IMMUTABLE
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            val intentFilter = IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED).apply {
-                addDataType("text/plain")
-            }
-            val intentFiltersArray = arrayOf(intentFilter)
+            val intentFiltersArray = arrayOf(
+                IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED).apply {
+                    addDataType("text/plain")
+                },
+                IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED) // Added fallback filter
+            )
             adapter.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, null)
         }
     }
