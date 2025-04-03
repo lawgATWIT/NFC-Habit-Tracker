@@ -1,7 +1,6 @@
 <resources>
-    <string name="app_name">NfcHabitTracker</string>
+    <string name="app_name">HabiTag</string>
     <string name="title_activity_create_habit">CreateHabitActivity</string>
-
     <string name="next">Next</string>
     <string name="previous">Previous</string>
     <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris iaculis, lectus vitae pharetra interdum, nulla dolor euismod tellus, quis eleifend nunc ipsum eu ligula.</string>

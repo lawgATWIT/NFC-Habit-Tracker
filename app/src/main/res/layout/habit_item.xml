@@ -10,24 +10,29 @@
         android:id="@+id/habitNameTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/buttonsContainer"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
         android:id="@+id/habitDaysTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:textSize="14sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/buttonsContainer"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/habitNameTextView"/>
 
     <TextView
         android:id="@+id/habitTimeTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:textSize="14sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/buttonsContainer"
+        android:layout_marginTop="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/habitDaysTextView"/>
 
     <LinearLayout
@@ -35,8 +40,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/habitTimeTextView"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <Button
@@ -44,7 +51,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Snooze"
-            android:backgroundTint="#800080"
+            android:backgroundTint="@color/indigo_500"
             android:textColor="#FFFFFF"
             android:layout_marginEnd="8dp"/>
 
