@@ -9,6 +9,7 @@ import android.content.SharedPreferences
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
+import android.os.Build // Added import
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -35,6 +36,7 @@ class MainActivity : AppCompatActivity() {
     private val gson = Gson()
     private val dayFormat = SimpleDateFormat("EEE", Locale.getDefault())
     private val TAG = "MainActivity"
+    private val alarmManager by lazy { getSystemService(Context.ALARM_SERVICE) as AlarmManager }
 
     private var nfcAdapter: NfcAdapter? = null
 
@@ -77,32 +79,24 @@ class MainActivity : AppCompatActivity() {
         loadHabits()
         habitAdapter.notifyDataSetChanged()
         updateVisibility()
-
-        nfcAdapter?.let { adapter ->
-            val pendingIntent = PendingIntent.getActivity(
-                this, 0, Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
-                PendingIntent.FLAG_IMMUTABLE
-            )
-            val intentFilter = IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED).apply {
-                addDataType("text/plain")
-            }
-            val intentFiltersArray = arrayOf(intentFilter)
-            adapter.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, null)
-        }
+        enableForegroundDispatch()
     }
 
     override fun onPause() {
         super.onPause()
-        nfcAdapter?.disableForegroundDispatch(this)
+        disableForegroundDispatch()
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action) {
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action || 
+            NfcAdapter.ACTION_TAG_DISCOVERED == intent.action) { // Added fallback for ACTION_TAG_DISCOVERED
             val rawMessages = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
             if (rawMessages != null) {
                 val messages = rawMessages.map { it as NdefMessage }
                 processNdefMessages(messages)
+            } else {
+                Toast.makeText(this, "NFC tag detected but no NDEF messages found.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -133,7 +127,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleNfcTagText(text: String) {
         Toast.makeText(this, "NFC Tag: $text", Toast.LENGTH_SHORT).show()
-        snoozeHabitIfMatching(text)
+        snoozeHabitIfMatching(text) // Assuming NFC snoozes for 24 hours like before
     }
 
     private fun snoozeHabitIfMatching(habitName: String) {
@@ -148,26 +142,46 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadHabits() {
+    fun loadHabits() {
         val habitsJson = sharedPreferences.getString("habitList", null)
         habitList.clear()
         if (habitsJson != null) {
             val type = object : TypeToken<List<Habit>>() {}.type
             try {
                 val loadedHabits: List<Habit> = gson.fromJson(habitsJson, type) ?: emptyList()
-                habitList.addAll(loadedHabits)
+                val now = Calendar.getInstance()
+                for (habit in loadedHabits) {
+                    // Reset isSkippedToday and skipDayActivated if the day has changed
+                    val lastSkipDay = sharedPreferences.getLong("skipDay_${habit.name}", 0L)
+                    val calendarLastSkip = Calendar.getInstance().apply { timeInMillis = lastSkipDay }
+                    if (calendarLastSkip.get(Calendar.DAY_OF_YEAR) != now.get(Calendar.DAY_OF_YEAR) ||
+                        calendarLastSkip.get(Calendar.YEAR) != now.get(Calendar.YEAR)) {
+                        habit.isSkippedToday = false
+                        habit.skipDayActivated = false // Reset the flag for the new day
+                    }
+                    habitList.add(habit)
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error deserializing habits: ${e.message}", e)
                 Toast.makeText(this, "Error loading habits, resetting data", Toast.LENGTH_SHORT).show()
                 sharedPreferences.edit().clear().apply()
             }
         }
+        // Reschedule notifications on load, considering skipped days
+        rescheduleAllHabitNotifications()
     }
 
-    private fun saveHabits() {
+    fun saveHabits() {
         try {
             val habitsJson = gson.toJson(habitList)
             sharedPreferences.edit().putString("habitList", habitsJson).apply()
+            habitList.forEach { habit ->
+                if (habit.isSkippedToday) {
+                    sharedPreferences.edit().putLong("skipDay_${habit.name}", System.currentTimeMillis()).apply()
+                } else {
+                    sharedPreferences.edit().remove("skipDay_${habit.name}").apply()
+                }
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error saving habits: ${e.message}", e)
             Toast.makeText(this, "Error saving habits", Toast.LENGTH_SHORT).show()
@@ -180,7 +194,7 @@ class MainActivity : AppCompatActivity() {
         updateVisibility()
     }
 
-    private fun updateVisibility() {
+    fun updateVisibility() {
         if (habitList.isEmpty()) {
             habitsListView.visibility = View.GONE
             emptyHabitListTextView.visibility = View.VISIBLE
@@ -190,62 +204,72 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private inner class HabitItemAdapter(context: Context, habits: List<Habit>) :
-        ArrayAdapter<Habit>(context, R.layout.habit_item, habits) {
+    private fun enableForegroundDispatch() {
+        nfcAdapter?.let { adapter ->
+            val pendingIntent = PendingIntent.getActivity(
+                this, 0, Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val intentFiltersArray = arrayOf(
+                IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED).apply {
+                    addDataType("text/plain")
+                },
+                IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED) // Added fallback filter
+            )
+            adapter.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, null)
+        }
+    }
 
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            val view = convertView ?: layoutInflater.inflate(R.layout.habit_item, parent, false)
-            val habit = getItem(position) ?: return view
+    private fun disableForegroundDispatch() {
+        nfcAdapter?.disableForegroundDispatch(this)
+    }
 
-            val nameTextView = view.findViewById<TextView>(R.id.habitNameTextView)
-            val daysTextView = view.findViewById<TextView>(R.id.habitDaysTextView)
-            val timeTextView = view.findViewById<TextView>(R.id.habitTimeTextView)
-            val snoozeButton = view.findViewById<Button>(R.id.snoozeButton)
-            val deleteButton = view.findViewById<Button>(R.id.deleteButton)
-
-            nameTextView?.text = habit.name
-            val daysStringBuilder = StringBuilder()
-            val sortedDays = habit.daysOfWeek.sorted()
-            for (day in sortedDays) {
-                val calendar = Calendar.getInstance()
-                calendar.set(Calendar.DAY_OF_WEEK, day)
-                daysStringBuilder.append(dayFormat.format(calendar.time)).append(" ")
+    private fun rescheduleAllHabitNotifications() {
+        for (habit in habitList) {
+            if (!habit.isSkippedToday) {
+                scheduleHabitNotifications(habit)
             }
-            daysTextView?.text = "Days: ${daysStringBuilder.toString().trim()}"
-            val formattedTime = String.format("%02d:%02d", habit.timeOfDayHour, habit.timeOfDayMinute)
-            timeTextView?.text = "Time: $formattedTime"
+        }
+    }
 
-            snoozeButton?.setOnClickListener {
-                habit.snoozedUntil = System.currentTimeMillis() + 24 * 60 * 60 * 1000
-                saveHabits()
-                Toast.makeText(context, "Notifications for '${habit.name}' snoozed for 24 hours", Toast.LENGTH_SHORT).show()
-                notifyDataSetChanged()
-            }
-
-            deleteButton?.setOnClickListener {
-                val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                for (i in 0 until 5) {
-                    val intent = Intent(context, HabitBroadcastReceiver::class.java).apply {
-                        action = "com.example.nfchabittracker.HABIT_NOTIFICATION"
-                        putExtra("habitName", habit.name)
-                        putExtra("notificationMessage", habit.notificationMessage)
-                    }
-                    val requestCode = (habit.name + i.toString()).hashCode()
-                    val pendingIntent = PendingIntent.getBroadcast(
-                        context,
-                        requestCode,
-                        intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                    alarmManager.cancel(pendingIntent)
+    private fun scheduleHabitNotifications(habit: Habit) {
+        for (day in habit.daysOfWeek) {
+            val calendar = Calendar.getInstance().apply {
+                set(Calendar.DAY_OF_WEEK, day)
+                set(Calendar.HOUR_OF_DAY, habit.timeOfDayHour)
+                set(Calendar.MINUTE, habit.timeOfDayMinute)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                if (timeInMillis < System.currentTimeMillis()) {
+                    add(Calendar.WEEK_OF_YEAR, 1)
                 }
-                habitList.remove(habit)
-                saveHabits()
-                notifyDataSetChanged()
-                updateVisibility()
             }
 
-            return view
+            val intent = Intent(this, HabitBroadcastReceiver::class.java).apply {
+                action = "com.example.nfchabittracker.HABIT_NOTIFICATION"
+                putExtra("habitName", habit.name)
+                putExtra("notificationMessage", habit.notificationMessage)
+            }
+            val requestCode = (habit.name + day.toString()).hashCode()
+            val pendingIntent = PendingIntent.getBroadcast(
+                this,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+                } else {
+                    Log.w(TAG, "Cannot schedule exact alarm for '${habit.name}'. Exact alarm permission not granted.")
+                    // Optionally, you can inform the user or use a less precise alarm
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent) // Fallback
+                }
+            } else {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+            }
+            Log.d(TAG, "Scheduled notification for '${habit.name}' on day $day at ${calendar.time}")
         }
     }
 }

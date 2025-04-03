@@ -34,6 +34,19 @@ class HabitBroadcastReceiver : BroadcastReceiver() {
             val habit = habitList.find { it.name == habitName }
 
             if (habit != null) {
+                // Check if Skip Day has been activated
+                if (habit.skipDayActivated) {
+                    Log.d(TAG, "Habit '$habitName' has Skip Day activated. Ignoring notification.")
+                    return
+                }
+
+                // Check if habit is within the 1-minute snooze waiting period
+                val snoozeWaitTime = 60 * 1000 // 1 minute
+                if (habit.lastSnoozeStartTime > 0 && System.currentTimeMillis() < habit.lastSnoozeStartTime + snoozeWaitTime) {
+                    Log.d(TAG, "Habit '$habitName' is in the snooze waiting period. Skipping regular notification.")
+                    return // Skip the notification
+                }
+
                 // Check if habit is snoozed
                 if (habit.snoozedUntil == 0L || System.currentTimeMillis() > habit.snoozedUntil) {
                     // Not snoozed or snooze expired, proceed with notification
