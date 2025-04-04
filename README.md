@@ -67,20 +67,3 @@ NFC-Habit-Tracker/
 
 5. **Grant Permissions**:
    - Ensure the app has permissions for notifications, NFC, and exact alarms.
-
-### Running via GitHub Releases
-
-1. **Download the APK**:
-   - Visit the [Releases](https://github.com/your-username/NFC-Habit-Tracker/releases) page on GitHub.
-   - Download the latest APK file.
-
-2. **Install the APK**:
-   - Transfer the APK to your Android device.
-   - Open the APK file and follow the installation prompts.
-
-3. **Run the App**:
-   - Launch the app from your device's app drawer.
-
-## Contact
-
-For questions or feedback, please contact [lawg@wit.edu].
