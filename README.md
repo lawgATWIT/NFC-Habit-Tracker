@@ -6,9 +6,9 @@ NFC Habit Tracker is an Android application designed to help users manage their 
 
 - Create and manage daily habits.
 - Set notifications for specific days and times.
-- Snooze habits for 24 hours using NFC tags.
+- Mark habits as completed using NFC tag scans.
 - View and delete habits from a list.
-- Supports exact alarm scheduling for precise notifications.
+- Supports exact reminder scheduling for notifications.
 
 ## File Structure
 
