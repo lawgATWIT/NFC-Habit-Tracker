@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleNfcTagText(text: String) {
         Toast.makeText(this, "NFC Tag: $text", Toast.LENGTH_SHORT).show()
-        snoozeHabitIfMatching(text) // Assuming NFC snoozes for 24 hours like before
+        snoozeHabitIfMatching(text) 
     }
 
     private fun snoozeHabitIfMatching(habitName: String) {
