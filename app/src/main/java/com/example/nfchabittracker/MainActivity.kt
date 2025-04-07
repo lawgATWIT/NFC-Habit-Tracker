@@ -135,7 +135,7 @@ class MainActivity : AppCompatActivity() {
         if (habit != null) {
             habit.snoozedUntil = System.currentTimeMillis() + 24 * 60 * 60 * 1000
             saveHabits()
-            Toast.makeText(this, "Habit '$habitName' snoozed for 24 hours", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "'$habitName' postponed until next scheduled habit time.", Toast.LENGTH_SHORT).show()
             habitAdapter.notifyDataSetChanged()
         } else {
             Toast.makeText(this, "No habit found with name '$habitName'", Toast.LENGTH_SHORT).show()
